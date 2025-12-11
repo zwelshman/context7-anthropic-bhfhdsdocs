@@ -161,20 +161,26 @@ st.markdown(f"Search **BHF {repo_choice.replace('-', ' ').title()}** with AI-pow
 def fetch_documentation(topic, repo, page=1):
     """Fetch documentation context from Context7 API"""
     repo_full = f"bhfdsc/{repo}"
-    url = f"https://context7.com/api/v2/docs/info/{repo_full}"
+    url = f"https://context7.com/api/v2/docs/code/{repo_full}"
+    
     params = {
-        "type": "txt",
         "topic": topic,
         "page": page
     }
-    headers = {"Authorization": api_key}
+    headers = {"Authorization": f"Bearer {api_key}"}
 
     try:
         response = requests.get(url, params=params, headers=headers, timeout=10)
         if response.status_code == 200:
-            return response.text
+            data = response.json()
+            # Context7 returns JSON, convert to readable text
+            if isinstance(data, dict):
+                return data.get("content", "") or data.get("text", "") or str(data)
+            return str(data)
+        elif response.status_code == 404:
+            return "Documentation not found for this query in the repository"
         else:
-            return f"Error fetching documentation: {response.status_code}"
+            return f"Error: {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"Request error: {str(e)}"
 
@@ -182,21 +188,24 @@ def fetch_code_context(topic, repo, page=1):
     """Fetch code context from Context7 API"""
     repo_full = f"bhfdsc/{repo}"
     url = f"https://context7.com/api/v2/docs/code/{repo_full}"
+    
     params = {
-        "type": "txt",
         "topic": topic,
         "page": page
     }
-    headers = {"Authorization": api_key}
+    headers = {"Authorization": f"Bearer {api_key}"}
 
     try:
         response = requests.get(url, params=params, headers=headers, timeout=10)
         if response.status_code == 200:
-            return response.text
-        else:
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("code", "") or data.get("examples", "") or ""
             return ""
     except requests.exceptions.RequestException:
         return ""
+    
+    return ""
 
 def get_best_answer(topic, docs_context, code_context):
     """Use Claude to generate the best answer based on documentation and code context"""
@@ -241,50 +250,52 @@ with col1:
 with col2:
     search_button = st.button("Search", use_container_width=True, type="primary")
 
-# Process search
+    # Process search
 if search_button and search_query:
     with st.spinner("🔄 Searching documentation..."):
         # Fetch contexts
         docs_context = fetch_documentation(search_query, repo_choice)
         code_context = fetch_code_context(search_query, repo_choice)
-        
+    
+    # Check if we got any results
+    if not docs_context or "Error" in docs_context or "not found" in docs_context.lower():
+        st.warning(f"⚠️ No documentation found for '{search_query}' in {repo_choice}")
+        st.info("Try a different search term or topic. Context7 works best with specific technical terms.")
+    else:
         # Generate answer
         with st.spinner("✨ Generating answer with Claude..."):
             answer = get_best_answer(search_query, docs_context, code_context)
-    
-    # Display results in tabs
-    tab1, tab2, tab3 = st.tabs(["📖 Answer", "📚 Documentation", "💻 Code Context"])
-    
-    with tab1:
-        st.markdown('<div class="answer-section">', unsafe_allow_html=True)
-        st.markdown("### Answer")
-        st.markdown(answer)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with tab2:
-        st.markdown('<div class="source-section">', unsafe_allow_html=True)
-        if docs_context.startswith("Error") or docs_context.startswith("Request"):
-            st.warning(docs_context)
-        else:
+        
+        # Display results in tabs
+        tab1, tab2, tab3 = st.tabs(["📖 Answer", "📚 Documentation", "💻 Code Context"])
+        
+        with tab1:
+            st.markdown('<div class="answer-section">', unsafe_allow_html=True)
+            st.markdown("### Answer")
+            st.markdown(answer)
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with tab2:
+            st.markdown('<div class="source-section">', unsafe_allow_html=True)
             st.markdown("### Documentation Context")
             st.text(docs_context)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with tab3:
-        if code_context.strip():
-            st.markdown('<div class="source-section">', unsafe_allow_html=True)
-            st.markdown("### Code Examples")
-            st.code(code_context, language="python")
             st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.info("No code context available for this query.")
-    
-    # Store in session for reference
-    st.session_state.messages.append({
-        "query": search_query,
-        "answer": answer,
-        "repo": repo_choice
-    })
+        
+        with tab3:
+            if code_context.strip():
+                st.markdown('<div class="source-section">', unsafe_allow_html=True)
+                st.markdown("### Code Examples")
+                st.code(code_context, language="python")
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.info("No code context available for this query.")
+        
+        # Store in session for reference
+        st.session_state.messages.append({
+            "query": search_query,
+            "answer": answer,
+            "repo": repo_choice
+        })
 
 # Show previous searches
 if st.session_state.messages:
