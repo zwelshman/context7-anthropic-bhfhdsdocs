@@ -10,7 +10,7 @@ from anthropic import Anthropic
 
 # PAGE SETUP
 st.set_page_config(
-    page_title="BHF Health Data Science Team Documentation and Standard Pipeline Knowledge Base",
+    page_title="BHFDSC HDS Documentation and Standard Pipeline Knowledge Base",
     page_icon="❤️",
     layout="wide"
 )
@@ -95,7 +95,7 @@ Provide a clear, helpful answer."""
 # HEADER
 st.markdown("""
     <div class="header-box">
-        <h1>❤️ BHF Health Data Science Team Documentation and Standard Pipeline Knowledge Base</h1>
+        <h1>❤️ BHFDSC HDS Documentation and Standard Pipeline Knowledge Base</h1>
         <p>Intelligent Q&A powered by Claude AI</p>
     </div>
 """, unsafe_allow_html=True)
