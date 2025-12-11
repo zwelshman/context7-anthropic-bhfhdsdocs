@@ -71,15 +71,38 @@ if not context7_key or not anthropic_key:
 
 st.sidebar.divider()
 
-# Repository selection
+# Repository selection with clear descriptions
+st.sidebar.markdown("### 📂 Choose Your Repository")
+
 repo_choice = st.sidebar.radio(
-    "Select Repository:",
+    "Which repository do you want to search?",
     options=["documentation", "standard-pipeline"],
-    format_func=lambda x: f"🏥 BHF {x.replace('-', ' ').title()}"
+    label_visibility="collapsed"
 )
 
+# Show detailed info about selected repo
+if repo_choice == "documentation":
+    st.sidebar.info(
+        "**📖 BHF Documentation**\n\n"
+        "Use this for:\n"
+        "• General information & guides\n"
+        "• Data models & structures\n"
+        "• Clinical coding systems\n"
+        "• Best practices & standards\n\n"
+        "❓ Example: 'What is the standard pipeline?'"
+    )
+else:
+    st.sidebar.info(
+        "**💻 BHF Standard Pipeline**\n\n"
+        "Use this for:\n"
+        "• Code examples & implementations\n"
+        "• Technical details & configuration\n"
+        "• Working code samples\n"
+        "• Development workflows\n\n"
+        "❓ Example: 'How do I implement the pipeline?'"
+    )
+
 st.sidebar.divider()
-st.sidebar.info("📚 Search BHF repository documentation with Claude AI")
 
 
 # ============================================================================
@@ -154,8 +177,30 @@ st.warning(
     "[bhfdsc_hds@hdruk.ac.uk](mailto:bhfdsc_hds@hdruk.ac.uk)"
 )
 
+st.divider()
+
+# Show what repo is selected and what it contains
+st.markdown("## 📂 Current Repository")
+
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col1:
+    st.markdown("**📖 Documentation**" if repo_choice == "documentation" else "💻 Standard Pipeline")
+
+with col2:
+    if repo_choice == "documentation":
+        st.caption("General info, guides, data models, best practices")
+    else:
+        st.caption("Code examples, implementations, technical details")
+
+with col3:
+    if st.button("📋 Change Repo", use_container_width=True):
+        st.info("Use the sidebar to switch repositories")
+
+st.divider()
+
 repo_display = repo_choice.replace('-', ' ').title()
-st.markdown(f"Searching **BHF {repo_display}** with AI-powered answers")
+st.markdown(f"**Search** BHF {repo_display} with AI-powered answers")
 
 st.divider()
 
