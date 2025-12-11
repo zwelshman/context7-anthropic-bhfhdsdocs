@@ -10,23 +10,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Apply custom styling
+# Apply custom styling - BHF Color Scheme
 st.markdown("""
     <style>
+        /* BHF Color Scheme */
+        :root {
+            --bhf-navy: #003d7a;
+            --bhf-red: #c41e3a;
+            --bhf-light-blue: #e8f0ff;
+            --bhf-dark-blue: #001f4d;
+        }
+        
         /* Main background and text */
         .main {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e8eef5 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
         }
         
         /* Header styling */
         h1 {
-            color: #1e3a8a;
+            color: #003d7a;
             font-weight: 700;
             margin-bottom: 0.5rem;
         }
         
         h2 {
-            color: #3b82f6;
+            color: #003d7a;
             font-weight: 600;
             margin-top: 1.5rem;
         }
@@ -36,24 +44,30 @@ st.markdown("""
             background: white;
             padding: 1.5rem;
             border-radius: 8px;
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid #c41e3a;
             margin: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 61, 122, 0.08);
         }
         
         /* Answer section */
         .answer-section {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8eef5 100%);
             padding: 1.5rem;
             border-radius: 8px;
-            border: 2px solid #3b82f6;
+            border: 2px solid #003d7a;
             margin: 1rem 0;
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 4px 8px rgba(0, 61, 122, 0.12);
         }
         
         /* Sidebar */
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+            background: linear-gradient(180deg, #003d7a 0%, #002147 100%);
+        }
+        
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] label {
+            color: white;
         }
         
         /* Tabs styling */
@@ -65,13 +79,25 @@ st.markdown("""
             padding: 0.75rem 1.5rem;
             background: #f0f4f8;
             border-radius: 6px;
-            color: #1e3a8a;
+            color: #003d7a;
             font-weight: 500;
         }
         
         .stTabs [aria-selected="true"] [data-baseweb="tab"] {
-            background: #3b82f6;
+            background: #003d7a;
             color: white;
+            border-bottom: 3px solid #c41e3a;
+        }
+        
+        /* Button styling */
+        .stButton > button {
+            background: linear-gradient(135deg, #003d7a 0%, #002147 100%);
+            color: white;
+            border: none;
+        }
+        
+        .stButton > button:hover {
+            background: linear-gradient(135deg, #c41e3a 0%, #8b0000 100%);
         }
     </style>
 """, unsafe_allow_html=True)
@@ -80,22 +106,40 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "client" not in st.session_state:
-    st.session_state.client = Anthropic()
+    st.session_state.client = Anthropic(api_key=st.secrets.get("ANTHROPIC_API_KEY"))
 
 # Sidebar configuration
 st.sidebar.title("⚙️ Configuration")
 
+# Check API keys
+context7_key = st.secrets.get("CONTEXT7_API_KEY", "")
+anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+
+col1, col2 = st.sidebar.columns([3, 1])
+with col1:
+    st.sidebar.markdown("**API Status**")
+with col2:
+    pass
+
+status_cols = st.sidebar.columns([2, 2])
+with status_cols[0]:
+    st.markdown(f"{'✅ Context7' if context7_key else '❌ Context7'}")
+with status_cols[1]:
+    st.markdown(f"{'✅ Anthropic' if anthropic_key else '❌ Anthropic'}")
+
+if not context7_key or not anthropic_key:
+    st.sidebar.error("⚠️ Missing API keys in secrets")
+    st.stop()
+
+api_key = context7_key
+
+st.sidebar.divider()
+
 repo_choice = st.sidebar.radio(
     "Select Repository:",
-    options=["bhfdsc/documentation", "bhfdsc/standard-template"],
+    options=["documentation", "standard-template"],
+    format_func=lambda x: f"🏥 BHF {x.replace('-', ' ').title()}",
     help="Choose which BHF repository to search"
-)
-
-api_key = st.sidebar.text_input(
-    "Context7 API Key:",
-    type="password",
-    value="ctx7sk-6625dd2b-6b13-4ca8-b0ae-4d974713053f",
-    help="Your Context7 API key for documentation access"
 )
 
 st.sidebar.divider()
@@ -108,14 +152,16 @@ col1, col2 = st.columns([6, 1])
 with col1:
     st.title("🔍 BHF Documentation Search")
 with col2:
-    st.metric("Repo", repo_choice.split("/")[1])
+    repo_display = repo_choice.replace('-', ' ').title()
+    st.markdown(f"<div style='padding-top: 1rem; text-align: right; color: #003d7a; font-weight: 600;'>📦 {repo_display}</div>", unsafe_allow_html=True)
 
-st.markdown(f"Search and query documentation from **{repo_choice}** with AI-powered answers")
+st.markdown(f"Search **BHF {repo_choice.replace('-', ' ').title()}** with AI-powered answers", unsafe_allow_html=True)
 
 # Functions
 def fetch_documentation(topic, repo, page=1):
     """Fetch documentation context from Context7 API"""
-    url = f"https://context7.com/api/v2/docs/info/{repo}"
+    repo_full = f"bhfdsc/{repo}"
+    url = f"https://context7.com/api/v2/docs/info/{repo_full}"
     params = {
         "type": "txt",
         "topic": topic,
@@ -134,7 +180,8 @@ def fetch_documentation(topic, repo, page=1):
 
 def fetch_code_context(topic, repo, page=1):
     """Fetch code context from Context7 API"""
-    url = f"https://context7.com/api/v2/docs/code/{repo}"
+    repo_full = f"bhfdsc/{repo}"
+    url = f"https://context7.com/api/v2/docs/code/{repo_full}"
     params = {
         "type": "txt",
         "topic": topic,
@@ -169,7 +216,7 @@ Code Examples and Context:
     prompt += "\n\nPlease provide a comprehensive answer based on the provided documentation and code examples. Be specific and actionable."
 
     message = st.session_state.client.messages.create(
-        model="claude-opus-4.5",
+        model="claude-sonnet-4-20250514",
         max_tokens=2048,
         messages=[
             {
