@@ -148,6 +148,12 @@ Provide a clear, helpful answer."""
 
 st.title("🔍 BHF Documentation Search")
 
+st.warning(
+    "⚠️ **EXPERIMENTAL** - This is a prototype tool. For issues or feedback, "
+    "please contact the Health Data Scientist Team: "
+    "[bhfdsc_hds@hdruk.ac.uk](mailto:bhfdsc_hds@hdruk.ac.uk)"
+)
+
 repo_display = repo_choice.replace('-', ' ').title()
 st.markdown(f"Searching **BHF {repo_display}** with AI-powered answers")
 
