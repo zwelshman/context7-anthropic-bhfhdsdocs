@@ -89,26 +89,31 @@ st.sidebar.info("📚 Search BHF repository documentation with Claude AI")
 def fetch_documentation(search_topic, repo_name):
     """
     Fetch documentation from Context7 API
+    Tries both /info and /code endpoints
     """
     repo_full = f"bhfdsc/{repo_name}"
-    url = f"https://context7.com/api/v2/docs/code/{repo_full}"
+    
+    # Try both endpoints
+    endpoints = [
+        f"https://context7.com/api/v2/docs/info/{repo_full}",
+        f"https://context7.com/api/v2/docs/code/{repo_full}"
+    ]
     
     headers = {"Authorization": f"Bearer {context7_key}"}
-    params = {"topic": search_topic}
+    params = {"topic": search_topic, "type": "txt"}
     
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, dict):
-                return data.get("content", "") or data.get("text", "") or str(data)
-            return str(data)
-        else:
-            return ""
+    for url in endpoints:
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=10)
             
-    except Exception as e:
-        return ""
+            if response.status_code == 200:
+                # Return plain text when type=txt
+                return response.text
+                
+        except Exception:
+            continue
+    
+    return ""
 
 
 # ============================================================================
@@ -169,7 +174,11 @@ if search_button and search_query:
     # Check if we found anything
     if not docs_context or len(docs_context.strip()) < 20:
         st.warning(f"⚠️ No documentation found for '{search_query}'")
-        st.info("Try a different search term or be more specific")
+        st.info(
+            f"The `bhfdsc/{repo_choice}` repository may not be indexed in Context7 yet, "
+            "or documentation for this topic doesn't exist.\n\n"
+            "Try different search terms, or check if the repo is available."
+        )
     else:
         # Generate answer
         with st.spinner("✨ Generating answer..."):
