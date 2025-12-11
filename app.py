@@ -95,7 +95,7 @@ Provide a clear, helpful answer."""
 # HEADER
 st.markdown("""
     <div class="header-box">
-        <h1>❤️ BHF Documentation Search</h1>
+        <h1>❤️ BHF Health Data Science Team Documentation and Standard Pipeline Knowledge Base</h1>
         <p>Intelligent Q&A powered by Claude AI</p>
     </div>
 """, unsafe_allow_html=True)
