@@ -10,7 +10,7 @@ from anthropic import Anthropic
 
 # PAGE SETUP
 st.set_page_config(
-    page_title="BHF Documentation Search",
+    page_title="BHF Health Data Science Team Documentation and Standard Pipeline Knowledge Base",
     page_icon="❤️",
     layout="wide"
 )
