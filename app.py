@@ -52,24 +52,36 @@ if not context7_key or not anthropic_key:
 
 
 # FUNCTIONS
-def fetch_documentation(search_topic, repo_name):
-    """Fetch from Context7 API"""
+def fetch_documentation(search_topic, repo_name, max_pages=3):
+    """Fetch multiple pages from Context7 API"""
     repo_full = f"bhfdsc/{repo_name}"
     endpoints = [
-        f"https://context7.com/api/v2/docs/info/{repo_full}",
-        f"https://context7.com/api/v2/docs/code/{repo_full}"
+        f"https://context7.com/api/v2/docs/code/{repo_full}",  # Code first
+        f"https://context7.com/api/v2/docs/info/{repo_full}"
     ]
     headers = {"Authorization": f"Bearer {context7_key}"}
-    params = {"topic": search_topic, "type": "txt"}
+    
+    all_results = []
     
     for url in endpoints:
-        try:
-            response = requests.get(url, params=params, headers=headers, timeout=10)
-            if response.status_code == 200:
-                return response.text
-        except Exception:
-            continue
-    return ""
+        # Fetch multiple pages per endpoint
+        for page in range(1, max_pages + 1):
+            params = {
+                "topic": search_topic, 
+                "type": "txt",
+                "page": page
+            }
+            
+            try:
+                response = requests.get(url, params=params, headers=headers, timeout=10)
+                if response.status_code == 200 and response.text.strip():
+                    all_results.append(response.text)
+                else:
+                    break  # Stop if page is empty or errors
+            except Exception:
+                continue
+    
+    return "\n\n---PAGE BREAK---\n\n".join(all_results)
 
 
 def generate_answer(search_query, docs_context):
