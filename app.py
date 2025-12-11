@@ -228,7 +228,7 @@ st.markdown("""
         
         /* Results */
         .result-box {
-            background: linear-gradient(135deg, #F5F8FF 0%, #EDF2FF 100%);
+            background: white;
             padding: 2rem;
             border-radius: var(--radius-md);
             border-left: 5px solid var(--bhf-red);
@@ -278,16 +278,33 @@ st.markdown("""
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 1rem;
             padding: 0.75rem 1.5rem;
+            color: var(--color-text) !important;
         }
         
         .stButton > button[kind="primary"] {
             background: linear-gradient(135deg, var(--bhf-red) 0%, var(--bhf-red-dark) 100%);
-            color: white;
+            color: white !important;
         }
         
         .stButton > button[kind="primary"]:hover {
             background: linear-gradient(135deg, var(--bhf-red-dark) 0%, #7A0B1B 100%);
             box-shadow: var(--shadow-red);
+            color: white !important;
+        }
+        
+        /* Spinner and loading */
+        .stSpinner {
+            color: var(--bhf-red) !important;
+        }
+        
+        .stSpinner > div {
+            border-color: var(--bhf-red) !important;
+            border-top-color: var(--bhf-red-dark) !important;
+        }
+        
+        /* Loading text color */
+        .stSpinner p {
+            color: var(--color-text) !important;
         }
         
         /* Divider */
@@ -508,19 +525,19 @@ if clear_button:
     st.rerun()
 
 if search_button and search_query:
-    with st.spinner("Searching documentation..."):
-        docs_context = fetch_documentation(search_query, repo_choice)
+    st.write("🔄 Searching documentation...")
+    docs_context = fetch_documentation(search_query, repo_choice)
     
     if not docs_context or len(docs_context.strip()) < 20:
         st.warning(f"No documentation found for '{search_query}'")
         st.info("Try different search terms or switch repositories")
     else:
-        with st.spinner("Generating answer with Claude..."):
-            answer = generate_answer(search_query, docs_context)
+        st.write("✨ Generating answer with Claude...")
+        answer = generate_answer(search_query, docs_context)
         
         st.markdown("""<div class="result-box">""", unsafe_allow_html=True)
-        st.markdown("## Answer")
-        st.markdown(answer)
+        st.subheader("Answer")
+        st.write(answer)
         st.markdown("""</div>""", unsafe_allow_html=True)
         
         with st.expander("📚 View Source Documentation", expanded=False):
